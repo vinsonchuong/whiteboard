@@ -6,7 +6,8 @@ var
         size:3,
         opacity:1
     }),
-    brushController = initBrushController()
+    brushController = initBrushController(),
+    chatController = initChatController()
 ;
 
 /* Models */
@@ -204,5 +205,22 @@ function initBrushController() {
     };
 }
 
-function initCanvasController() {
+function initChatController() {
+    var
+        history,
+        input,
+        button
+    ;
+
+    function initUi() {
+        history = $('#chatHistory');
+        input = $('#chatText');
+        button = $('#chatSubmit');
+
+        button.button();
+    }
+
+    $(document).ready(initUi);
+
+    return {};
 }

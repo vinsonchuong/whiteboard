@@ -13,6 +13,7 @@
     </head>
     <body>
         <div id="properties">
+            <h1>Brush Properties</h1>
             <ul>
                 <li>
                     <label for="color">Color</label>
@@ -32,7 +33,7 @@
         </div>
         <div id="tools">
             <div>
-                <span>Brushes</span>
+                <h1>Brushes</h1>
                 <ul>
                     <li>
                         <input type="radio" id="pen" name="tools" checked="checked" />
@@ -44,12 +45,25 @@
                     </li>
                 </ul>
             </div>
-            <div>
-                <span>Commands</span>
-                <ul>
-                </ul>
-            </div>
         </div>
         <div id="canvas"></div>
+        <div id="layers"></div>
+        <div id="chat">
+            <ol id="chatHistory">
+                <li>This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. </li>
+                <li>This is a message</li>
+                <li>This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. </li>
+                <li>This is a message</li>
+                <li>This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. </li>
+                <li>This is a message</li>
+                <li>This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. </li>
+                <li>This is a message</li>
+            </ol>
+            <div id="chatInput">
+                <h1>Chat</h1>
+                <input type="text" id="chatText" class="text ui-widget-content ui-corner-all" />
+                <button id="chatSubmit">Send</button>
+            </div>
+        </div>
     </body>
 </html>
