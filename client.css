@@ -1,0 +1,154 @@
+@charset "utf-8";
+
+/* Reset */
+html, body, a, abbr, acronym, address, blockquote, caption, cite, code, dd, del,
+dfn, div, dl, dt, fieldset, form, h1, h2, h3, h4, h5, h6, em, font, img, ins,
+kbd, label, legend, li, object, ol, p, pre, q, samp, span, sub, sup, table,
+tbody, td, tfoot, thead, th, tr, ul, var {
+    background: transparent;
+    border: 0;
+    font-size: 100%;
+    margin: 0;
+    outline: 0;
+    padding: 0;
+    vertical-align: baseline;
+}
+html {
+    color: black;
+    font-family: serif;
+    line-height: 1;
+}
+:focus {
+    outline: 0;
+}
+address, cite, dfn, var {
+    font-style: normal;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:after, blockquote:before, q:after, q:before {
+    content: '';
+    content: none;
+}
+button {
+    font-size: 100%;
+}
+caption, th, td {
+    text-align: left;
+}
+button, code, input, kbd, pre, samp, select, textarea, var {
+    font-family: inherit;
+}
+del {
+    text-decoration: line-through;
+}
+dt, h1, h2, h3, h4, h5, h6, kbd, th {
+    font-weight: normal;
+}
+ins {
+    text-decoration: none;
+}
+ol, ul {
+    list-style: none;
+}
+sub {
+    font-size: 65%;
+    vertical-align: sub;
+}
+sup {
+    font-size: 70%;
+    vertical-align: super;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/* Main */
+html {
+    font-size: 62.5%;
+}
+body {
+    border:1px dashed #aaa;
+    font-family:"Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", sans-serif;
+    height:66em;
+    margin:0 auto;
+    width:96em;
+}
+a abbr[title] {
+    border: none;
+}
+abbr[title] {
+    border-bottom: 1px dotted #000;
+    cursor: help;
+}
+blockquote {
+    margin-left: 4em;
+}
+cite, dfn {
+    font-style: italic;
+}
+code, kbd, samp, var {
+    font-family: monospace;
+}
+ins {
+    font-weight: bold;
+}
+q {
+    quotes: "“" "”" "‘" "’"
+}
+
+/* Properties */
+#properties {
+    border-bottom:1px dashed #aaa;
+    text-align:center;
+}
+#properties li {
+    display:inline-block;
+    height:3.9em;
+    line-height:3.7em;
+    margin:0 1.5em;
+}
+#properties li > * {
+    display:inline-block !important;
+    font-size:1.6em;
+    vertical-align:middle;
+}
+#properties li .slider {
+    margin:0 0.5em;
+    width:10em;
+}
+#sizeValue {
+    width:2.5em;
+}
+#opacityValue {
+    width:2.7em;
+}
+
+/* Tools */
+#tools {
+    border-right:1px dashed #aaa;
+    float:left;
+    height:62em;
+    width:10em;
+}
+#tools > div {
+    border-bottom:1px dashed #aaa;
+    padding-bottom:3.6em;
+}
+#tools > div > span {
+    display:block;
+    padding:0.65em 0;
+    font-size:1.6em;
+    font-weight:bold;
+    text-align:center;
+}
+#tools label {
+    display:block;
+    font-size:1.6em;
+    margin:0;
+}
+
+/* Canvas */
+#canvas
