@@ -120,8 +120,11 @@ function initBrushModel(properties) {
         get:function (name) {
             return name ? getProperty(name) : getProperties()
         },
+        getValidProperties:function () {
+            return toolProperties[type]
+        },
         set:function (x, y) {
-            typeof x == 'object' ? setProperties(x) : setProperty(x, y);
+            typeof x == 'object' ? setProperties(x) : setProperty(x, y)
         },
         onchange:function(property, callback) {
             if (property == 'type')
@@ -211,7 +214,7 @@ function initBrushController() {
         opacityValue,
         toolPicker,
 
-        enableOpacityChangeEvent = true
+        enableToolChangeEvent = true
     ;
 
     function initUi() {
@@ -253,7 +256,7 @@ function initBrushController() {
 
         toolPicker.buttonset();
         toolPicker.change(function() {
-            enableOpacityChangeEvent &&
+            enableToolChangeEvent &&
                 brush.set('type', $('#tools input[name=tools]:checked').attr('id'))
         });
     }
@@ -287,10 +290,15 @@ function initBrushController() {
     }
 
     function updateTool() {
-        enableOpacityChangeEvent = false;
+        enableToolChangeEvent = false;
         $('#tools input[id=' + brush.get('type') + ']').attr('checked', 'checked');
         $('#tools').buttonset('refresh');
-        enableOpacityChangeEvent = true;
+        enableToolChangeEvent = true;
+
+        var validProperties = brush.getValidProperties();
+        validProperties.color ? colorPicker.parent().show() : colorPicker.parent().hide();
+        validProperties.size ? sizePicker.parent().show() : sizePicker.parent().hide();
+        validProperties.opacity ? opacityPicker.parent().show() : opacityPicker.parent().hide();
     }
 
     brush.onchange('color', updateColor);
@@ -398,7 +406,6 @@ function initCanvasController() {
         context = canvas[0].getContext('2d');
 
         container.live('drag dragstart dragend', function(event) {
-            console.log('foo');
             var
                 offset = container.offset(),
                 x = event.layerX - offset.left,
@@ -412,7 +419,7 @@ function initCanvasController() {
                 context.lineTo(x,y);
                 context.stroke();
             } else { // type == 'dragend'
-                context.closePath();
+                //context.closePath();
             }
         });
     }
