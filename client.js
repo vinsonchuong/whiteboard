@@ -6,10 +6,12 @@ var
     brush = initBrushModel({
         type:'pen',
         color:{r:0, g:0, b:0},
+        fill:{r:255, g:255, b:255},
         size:3,
         opacity:1
     }),
     chat = initChatModel(),
+    canvas = initCanvasModel(),
 
     brushController = initBrushController(),
     chatController = initChatController(),
@@ -52,14 +54,17 @@ function initChatServerAdapter(serverName) {
 function initBrushModel(properties) {
     var
         toolProperties = {
-            pen:{color:1, size:1, opacity:1},
-            eraser:{size:1}
+            pen:{color:1, size:1},
+            eraser:{size:1},
+            rectangle:{color:1, fill:1, size:1, opacity:1}
         },
 
         type = properties.type,
         typeChangeCallbacks = [],
         color = properties.color,
         colorChangeCallbacks = [],
+        fill = properties.fill,
+        fillChangeCallbacks = [],
         size = properties.size,
         sizeChangeCallbacks = [],
         opacity = properties.opacity,
@@ -71,8 +76,10 @@ function initBrushModel(properties) {
             validPropertyLookup = toolProperties[type],
             properties = {type:type}
         ;
-        if (validPropertyLookup.color)
+        if (validPropertyLookup.color && color)
             properties.color = color;
+        if (validPropertyLookup.fill && fill)
+            properties.fill = fill;
         if (validPropertyLookup.size && size)
             properties.size = size;
         if (validPropertyLookup.opacity && opacity)
@@ -99,6 +106,10 @@ function initBrushModel(properties) {
         if (validPropertyLookup.color && properties.color) {
             color = properties.color;
             runFunctions(colorChangeCallbacks);
+        }
+        if (validPropertyLookup.fill && properties.fill) {
+            fill = properties.fill;
+            runFunctions(fillChangeCallbacks);
         }
         if (validPropertyLookup.size && properties.size) {
             size = properties.size;
@@ -131,6 +142,8 @@ function initBrushModel(properties) {
                 typeChangeCallbacks.push(callback);
             if (property == 'color')
                 colorChangeCallbacks.push(callback);
+            if (property == 'fill')
+                fillChangeCallbacks.push(callback);
             if (property == 'size')
                 sizeChangeCallbacks.push(callback);
             if (property == 'opacity')
@@ -163,22 +176,19 @@ function initChatModel() {
         chatServer.setName(name);
     }
 
-    function runAddCallbacks() {
-        for (
-            var
-                funcNo = -1,
-                numFuncs = messageAddCallbacks.length;
-            ++funcNo < numFuncs;
-        )
-            messageAddCallbacks[funcNo]();
-    }
-
     function receive(sender, message) {
         messages.push({
             sender:sender,
             message:message
         });
-        runAddCallbacks();
+        for (
+            var
+                funcNo = -1,
+                numFuncs = messageAddCallbacks.length
+            ;
+            ++funcNo < numFuncs;
+            )
+            messageAddCallbacks[funcNo]();
     }
 
     function send(message) {
@@ -204,10 +214,36 @@ function initChatModel() {
     }
 }
 
+function initCanvasModel() {
+    var
+        commands = [],
+        commandAddCallbacks = []
+    ;
+
+    function addCommand(command) {
+        commands.push(command);
+        for (
+            var
+                funcNo = -1,
+                numFuncs = commandAddCallbacks.length
+            ;
+            ++funcNo < numFuncs;
+        )
+            commandAddCallbacks[funcNo]();
+    }
+
+    return {
+        getCommands:function() {return commands},
+        addCommand:addCommand,
+        onadd:function (callback) {commandAddCallbacks.push(callback)}
+    }
+}
+
 /* Controllers */
 function initBrushController() {
     var
         colorPicker,
+        fillPicker,
         sizePicker,
         sizeValue,
         opacityPicker,
@@ -219,6 +255,7 @@ function initBrushController() {
 
     function initUi() {
         colorPicker = $('#color');
+        fillPicker = $('#fill');
         sizePicker = $('#size');
         sizeValue = $('#sizeValue');
         opacityPicker = $('#opacity');
@@ -231,9 +268,15 @@ function initBrushController() {
             }
         });
 
+        fillPicker.miniColors({
+            change:function(hex, rgb) {
+                brush.set('fill', rgb)
+            }
+        });
+
         sizePicker.slider({
             range:'min',
-            min:1,
+            min:0,
             max:50,
             slide:function(event, ui) {
                 var size = ui.value;
@@ -263,6 +306,7 @@ function initBrushController() {
 
     function updateUi() {
         updateColor();
+        updateFill();
         updateSize();
         updateOpacity();
         updateTool();
@@ -270,23 +314,36 @@ function initBrushController() {
 
     function updateColor() {
         var color = brush.get('color');
-        colorPicker.miniColors(
+        color && colorPicker.miniColors(
             'value',
             '#' + color.r.toString(16) + color.g.toString(16) +
                 color.b.toString(16)
         );
     }
 
+    function updateFill() {
+        var fill = brush.get('fill');
+        fill && fillPicker.miniColors(
+            'value',
+            '#' + fill.r.toString(16) + fill.g.toString(16) +
+                fill.b.toString(16)
+        );
+    }
+
     function updateSize() {
         var size = brush.get('size');
-        sizePicker.slider('option', 'value', size);
-        sizeValue.text(size + 'px');
+        if (size) {
+            sizePicker.slider('option', 'value', size);
+            sizeValue.text(size + 'px');
+        }
     }
 
     function updateOpacity() {
         var opacity = brush.get('opacity');
-        opacityPicker.slider('option', 'value', opacity);
-        opacityValue.text(Math.round(opacity * 100) + '%');
+        if (opacity) {
+            opacityPicker.slider('option', 'value', opacity);
+            opacityValue.text(Math.round(opacity * 100) + '%');
+        }
     }
 
     function updateTool() {
@@ -297,11 +354,14 @@ function initBrushController() {
 
         var validProperties = brush.getValidProperties();
         validProperties.color ? colorPicker.parent().show() : colorPicker.parent().hide();
+        validProperties.fill ? fillPicker.parent().show() : fillPicker.parent().hide();
         validProperties.size ? sizePicker.parent().show() : sizePicker.parent().hide();
         validProperties.opacity ? opacityPicker.parent().show() : opacityPicker.parent().hide();
+        updateOpacity();
     }
 
     brush.onchange('color', updateColor);
+    brush.onchange('fill', updateFill);
     brush.onchange('size', updateSize);
     brush.onchange('opacity', updateOpacity);
     brush.onchange('type', updateTool);
@@ -394,33 +454,118 @@ function initChatController() {
 function initCanvasController() {
     var
         container,
-        canvas,
+        clearButton,
 
-        context
+        context,
+        tempContext,
+        startPoint
     ;
+
+    function executeCommand(command) {
+        switch(command.name) {
+            case 'drawPath':
+                drawPath(command.points);
+                break;
+            case 'clear':
+                clear();
+                break;
+        }
+    }
+
+    function drawPath(points) {
+        context.beginPath();
+        var curPt = points[0];
+        context.moveTo(curPt.x, curPt.y);
+        for (var ptNum = 0, numPts = points.length; ++ptNum < numPts;) {
+            curPt = points[ptNum];
+            context.lineTo(curPt.x, curPt.y);
+        }
+        context.closePath();
+        context.stroke();
+    }
+
+    function clear() {
+        context.clearRect(0, 0, container.width(), container.height())
+    }
 
     function initUi() {
         container = $('#drawingSurface');
-        canvas = $('#canvas');
+        clearButton = $('#clear');
 
-        context = canvas[0].getContext('2d');
+        var canvasElem = $('<canvas width="' + container.width() +
+            '" height="' + container.height() + '"></canvas>');
+        canvasElem.appendTo(container);
+        context = canvasElem[0].getContext('2d');
+
+        var tempCanvasElem = $('<canvas width="' + container.width() +
+            '" height="' + container.height() + '"></canvas>');
+        tempCanvasElem.appendTo(container);
+        tempContext = tempCanvasElem[0].getContext('2d');
 
         container.live('drag dragstart dragend', function(event) {
             var
-                offset = container.offset(),
-                x = event.layerX - offset.left,
-                y = event.layerY - offset.top,
+                x = event.layerX,
+                y = event.layerY,
                 type = event.handleObj.type
             ;
-            if (type == 'dragstart') {
-                context.beginPath();
-                context.moveTo(x,y);
-            } else if (type == 'drag') {
-                context.lineTo(x,y);
-                context.stroke();
-            } else { // type == 'dragend'
-                //context.closePath();
+            switch (brush.get('type')) {
+                case 'pen':
+                case 'eraser':
+                    switch (type) {
+                        case 'dragstart':
+                            startPoint = {x:x, y:y};
+                            break;
+                        case 'drag':
+                            startPoint && canvas.addCommand({
+                                name:'drawPath',
+                                points:[
+                                    startPoint,
+                                    {x:x, y:y}
+                                ]
+                            });
+                            startPoint = {x:x, y:y};
+                            break;
+                        case 'dragend':
+                            startPoint = null;
+                            break;
+                    }
+                    break;
+                case 'rectangle':
+                    switch (type) {
+                        case 'dragstart':
+                            startPoint = {x:x, y:y};
+                            break;
+                        case 'drag':
+                            var
+                                mx = Math.min(x, startPoint.x),
+                                my = Math.min(y, startPoint.y),
+                                w = Math.abs(x - startPoint.x),
+                                h = Math.abs(y - startPoint.y)
+                            ;
+                            tempContext.clearRect(0, 0, container.width(),
+                                container.height());
+                            if (w && h) {
+                                var size = brush.get('size');
+                                tempContext.strokeRect(mx, my, w, h);
+                                tempContext.fillRect(mx + size / 2.0,
+                                    my + size / 2.0, w - size, h - size);
+                            }
+                            break;
+                        case 'dragend':
+                            startPoint = null;
+                            context.drawImage(tempCanvasElem[0], 0, 0);
+                            tempContext.clearRect(0, 0, container.width(),
+                                container.height());
+                            break;
+                    }
             }
+        });
+
+        clearButton.button();
+        clearButton.click(function () {
+            canvas.addCommand({
+                name:'clear'
+            })
         });
     }
 
@@ -429,33 +574,52 @@ function initCanvasController() {
     }
 
     function updateBrush() {
+        var color, fill;
         if (context) {
             var brushProperties = brush.get();
             if (brushProperties.type == 'eraser') {
                 context.globalCompositeOperation = 'copy';
                 context.strokeStyle = 'rgba(0,0,0,0)';
-                context.fillStyle = 'rgba(0,0,0,0)';
-            } else { // brushProperties.type == 'pen'
-                var color = brushProperties.color;
+                context.lineWidth = brushProperties.size;
+                context.lineWidth = brushProperties.size;
+                context.lineCap = 'round';
+                context.lineJoin = 'round';
+            } else if (brushProperties.type == 'pen') {
+                color = brushProperties.color;
                 context.globalCompositeOperation = 'source-over';
-                context.strokeStyle = 'rgba(' + color.r + ',' + color.g + ',' +
-                    color.b + ',' + brushProperties.opacity + ')';
-                context.fillStyle = 'rgba(' + color.r + ',' + color.g + ',' +
-                    color.b + ',' + brushProperties.opacity + ')';
+                context.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
+                    color.b + ')';
+                context.lineWidth = brushProperties.size;
+                context.lineCap = 'round';
+                context.lineJoin = 'round';
+            } else if (brushProperties.type == 'rectangle') {
+                color = brushProperties.color;
+                fill = brushProperties.fill;
+                tempContext.globalCompositeOperation = 'source-over';
+                tempContext.strokeStyle = 'rgb(' + color.r + ',' +
+                    color.g + ',' + color.b + ')';
+                tempContext.fillStyle = 'rgba(' + fill.r + ',' + fill.g +
+                    ',' + fill.b + ',' + brushProperties.opacity + ')';
+                tempContext.lineWidth = Math.round(brushProperties.size / 2.0) * 2;
+                tempContext.lineCap = 'round';
+                tempContext.lineJoin = 'round';
             }
-            context.lineWidth = brushProperties.size;
-            context.lineCap = 'round';
-            context.lineJoin = 'round';
         }
     }
 
-    $(document).ready(initUi);
-    $(document).ready(updateUi);
-
     brush.onchange('color', updateBrush);
+    brush.onchange('fill', updateBrush);
     brush.onchange('size', updateBrush);
     brush.onchange('opacity', updateBrush);
     brush.onchange('type', updateBrush);
+
+    canvas.onadd(function () {
+        var commands = canvas.getCommands();
+        executeCommand(commands[commands.length - 1]);
+    });
+
+    $(document).ready(initUi);
+    $(document).ready(updateUi);
 
     return {
         initUi:initUi,

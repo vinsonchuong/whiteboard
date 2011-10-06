@@ -14,19 +14,23 @@
     </head>
     <body>
         <div id="properties">
-            <h1>Brush Properties</h1>
+            <h1>Properties</h1>
             <ul>
                 <li>
-                    <label for="color">Color</label>
-                    <input type="hidden" id="color" />
+                    <label for="color">Stroke Color</label>
+                    <input type="hidden" id="color"  class="colors" />
                 </li>
                 <li>
-                    <label for="size">Size</label>
+                    <label for="fill">Fill Color</label>
+                    <input type="hidden" id="fill" class="colors" />
+                </li>
+                <li>
+                    <label for="size">Stroke Size</label>
                     <div id="size" class="slider"></div>
                     <span id="sizeValue"></span>
                 </li>
                 <li>
-                    <label for="opacity">Opacity</label>
+                    <label for="opacity">Fill Opacity</label>
                     <div id="opacity" class="slider"></div>
                     <span id="opacityValue"></span>
                 </li>
@@ -34,7 +38,7 @@
         </div>
         <div id="tools">
             <div>
-                <h1>Brushes</h1>
+                <h1>Tools</h1>
                 <ul>
                     <li>
                         <input type="radio" id="pen" name="tools" checked="checked" />
@@ -44,11 +48,20 @@
                         <input type="radio" id="eraser" name="tools" />
                         <label for="eraser">Eraser</label>
                     </li>
+                    <li>
+                        <input type="radio" id="rectangle" name="tools" />
+                        <label for="rectangle">Rectangle</label>
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <h1>Commands</h1>
+                <ul>
+                    <li><button id="clear">Clear</button></li>
                 </ul>
             </div>
         </div>
         <div id="drawingSurface">
-            <canvas id="canvas" width="858" height="480"></canvas>
         </div>
         <div id="layers"></div>
         <div id="chat">

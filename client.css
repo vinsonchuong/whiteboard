@@ -119,6 +119,9 @@ q {
     line-height:3.7em;
     margin:0 1.5em;
 }
+#properties li:last-child {
+    margin-right:0;
+}
 #properties li > * {
     display:inline-block !important;
     font-size:1.6em;
@@ -126,7 +129,7 @@ q {
 }
 #properties li .slider {
     margin:0 0.5em;
-    width:10em;
+    width:5em;
 }
 #sizeValue {
     width:2.5em;
@@ -140,7 +143,7 @@ q {
     float:left;
     height:48em;
     margin-right:0 !important;
-    width:9.9em;
+    width:11.9em;
 }
 #tools > div {
     border-bottom:1px dashed #aaa;
@@ -152,20 +155,21 @@ q {
     font-weight:bold;
     text-align:center;
 }
-#tools label {
+#tools label, #tools button {
     display:block;
     font-size:1.6em;
     margin:0;
+    width:100%;
 }
 
 #drawingSurface {
     height:48em;
     float:left;
-    width:85.8em;
+    position:relative;
+    width:83.8em;
 }
 #drawingSurface canvas {
-    height:100%;
-    width:100%;
+    position:absolute;
 }
 
 #chat {
