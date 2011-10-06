@@ -1,16 +1,54 @@
-/* State */
+/* Global State */
 var
+    serverName = 'http://localhost:4792',
+    chatServer = initChatServerAdapter(serverName),
+
     brush = initBrushModel({
         type:'pen',
-        color:'000000',
+        color:{r:0, g:0, b:0},
         size:3,
         opacity:1
     }),
+    chat = initChatModel(),
+
     brushController = initBrushController(),
-    chatController = initChatController()
+    chatController = initChatController(),
+    canvasController = initCanvasController()
 ;
 
 /* Models */
+function initChatServerAdapter(serverName) {
+    var
+        server = io.connect(serverName + '/chat'),
+        receiveCallbacks = []
+    ;
+
+    function callReceiveCallbacks(sender, message) {
+        for (
+            var
+                funcNo = -1,
+                numFuncs = receiveCallbacks.length
+            ;
+            ++funcNo < numFuncs;
+        )
+            receiveCallbacks[funcNo](sender, message)
+    }
+
+    server.on('receive', function(message) {
+        var
+            sanitizedSender = $('<div />').text(message.sender).html(),
+            sanitizedMessage = $('<div />').text(message.message).html()
+        ;
+        callReceiveCallbacks(sanitizedSender, sanitizedMessage);
+    });
+
+    return {
+        setName:function(name) {server.emit('setName', name)},
+        send:function(message) {server.emit('send', message)},
+        onreceive:function(callback) {receiveCallbacks.push(callback)}
+    }
+}
+
 function initBrushModel(properties) {
     var
         toolProperties = {
@@ -19,13 +57,13 @@ function initBrushModel(properties) {
         },
 
         type = properties.type,
-        typeChangeEvents = [],
+        typeChangeCallbacks = [],
         color = properties.color,
-        colorChangeEvents = [],
+        colorChangeCallbacks = [],
         size = properties.size,
-        sizeChangeEvents = [],
+        sizeChangeCallbacks = [],
         opacity = properties.opacity,
-        opacityChangeEvents = []
+        opacityChangeCallbacks = []
     ;
 
     function getProperties() {
@@ -54,33 +92,22 @@ function initBrushModel(properties) {
     function setProperties(properties) {
         if (properties.type) {
             type = properties.type;
-            runFunctions(typeChangeEvents);
+            runFunctions(typeChangeCallbacks);
         }
 
         var validPropertyLookup = toolProperties[type];
         if (validPropertyLookup.color && properties.color) {
             color = properties.color;
-            runFunctions(colorChangeEvents);
+            runFunctions(colorChangeCallbacks);
         }
         if (validPropertyLookup.size && properties.size) {
             size = properties.size;
-            runFunctions(sizeChangeEvents);
+            runFunctions(sizeChangeCallbacks);
         }
         if (validPropertyLookup.opacity && properties.opacity) {
             opacity = properties.opacity;
-            runFunctions(opacityChangeEvents);
+            runFunctions(opacityChangeCallbacks);
         }
-    }
-
-    function change(property, callback) {
-        if (property == 'type')
-            typeChangeEvents.push(callback);
-        if (property == 'color')
-            colorChangeEvents.push(callback);
-        if (property == 'size')
-            sizeChangeEvents.push(callback);
-        if (property == 'opacity')
-            opacityChangeEvents.push(callback);
     }
 
     function setProperty(name, value) {
@@ -96,8 +123,82 @@ function initBrushModel(properties) {
         set:function (x, y) {
             typeof x == 'object' ? setProperties(x) : setProperty(x, y);
         },
-        change:change
+        onchange:function(property, callback) {
+            if (property == 'type')
+                typeChangeCallbacks.push(callback);
+            if (property == 'color')
+                colorChangeCallbacks.push(callback);
+            if (property == 'size')
+                sizeChangeCallbacks.push(callback);
+            if (property == 'opacity')
+                opacityChangeCallbacks.push(callback);
+        }
     };
+}
+
+function initChatModel() {
+    var
+        name,
+        messages = [{
+            sender:'Server',
+            message:'Welcome to Whiteboard, a shared drawing surface ' +
+                'supporting multiple simultaneous users.'
+        }],
+        messageAddCallbacks = []
+    ;
+
+    function getMessages() {
+        return messages;
+    }
+
+    function getName() {
+        return name;
+    }
+
+    function setName(newName) {
+        name = newName;
+        chatServer.setName(name);
+    }
+
+    function runAddCallbacks() {
+        for (
+            var
+                funcNo = -1,
+                numFuncs = messageAddCallbacks.length;
+            ++funcNo < numFuncs;
+        )
+            messageAddCallbacks[funcNo]();
+    }
+
+    function receive(sender, message) {
+        messages.push({
+            sender:sender,
+            message:message
+        });
+        runAddCallbacks();
+    }
+
+    function send(message) {
+        if (name) {
+            receive(name, message);
+            chatServer.send(message);
+        }
+    }
+
+    function onadd(callback) {
+        messageAddCallbacks.push(callback);
+    }
+
+    chatServer.onreceive(receive);
+
+    return {
+        getName:getName,
+        setName:setName,
+        getMessages:getMessages,
+        receive:receive,
+        send:send,
+        onadd:onadd
+    }
 }
 
 /* Controllers */
@@ -123,7 +224,7 @@ function initBrushController() {
 
         colorPicker.miniColors({
             change:function(hex, rgb) {
-                brush.set('color', hex.substr(1))
+                brush.set('color', rgb)
             }
         });
 
@@ -165,7 +266,12 @@ function initBrushController() {
     }
 
     function updateColor() {
-        colorPicker.miniColors('value', brush.get('color'));
+        var color = brush.get('color');
+        colorPicker.miniColors(
+            'value',
+            '#' + color.r.toString(16) + color.g.toString(16) +
+                color.b.toString(16)
+        );
     }
 
     function updateSize() {
@@ -187,10 +293,10 @@ function initBrushController() {
         enableOpacityChangeEvent = true;
     }
 
-    brush.change('color', updateColor);
-    brush.change('size', updateSize);
-    brush.change('opacity', updateOpacity);
-    brush.change('type', updateTool);
+    brush.onchange('color', updateColor);
+    brush.onchange('size', updateSize);
+    brush.onchange('opacity', updateOpacity);
+    brush.onchange('type', updateTool);
 
     $(document).ready(initUi);
     $(document).ready(updateUi);
@@ -209,18 +315,144 @@ function initChatController() {
     var
         history,
         input,
-        button
+        button,
+        signInDialog,
+        nameInput
     ;
 
     function initUi() {
         history = $('#chatHistory');
         input = $('#chatText');
         button = $('#chatSubmit');
+        signInDialog = $('#signInDialog');
+        nameInput = $('#name');
+
+        function signIn() {
+            chat.setName(nameInput.val());
+            signInDialog.dialog('close');
+        }
+        signInDialog.dialog({
+            modal:true,
+            width:280,
+            buttons:{
+                'Sign In':signIn
+            }
+        });
+        nameInput.keydown(function(event) {
+            if (event.which == 13)
+                signIn()
+        });
+
+        function sendMessage() {
+            chat.send(input.val());
+            input.val('');
+            input.focus();
+        }
 
         button.button();
+        button.click(sendMessage);
+
+        input.keydown(function(event) {
+            if (event.which == 13)
+                sendMessage()
+        });
+    }
+
+    function updateUi() {
+        var messages = chat.getMessages();
+        if (messages && messages.length) {
+            var message = messages[messages.length - 1];
+            if (message.sender == 'Server') {
+                history.prepend('<li class="system"><p>' + message.message +
+                    '</p></li>');
+            } else {
+                history.prepend('<li><h2>' + message.sender + '</h2><p>' +
+                    message.message + '</p></li>');
+            }
+        }
+    }
+
+    chat.onadd(updateUi);
+
+    $(document).ready(initUi);
+    $(document).ready(updateUi);
+
+    return {
+        initUi:initUi,
+        updateUi:updateUi
+    };
+}
+
+function initCanvasController() {
+    var
+        container,
+        canvas,
+
+        context
+    ;
+
+    function initUi() {
+        container = $('#drawingSurface');
+        canvas = $('#canvas');
+
+        context = canvas[0].getContext('2d');
+
+        container.live('drag dragstart dragend', function(event) {
+            console.log('foo');
+            var
+                offset = container.offset(),
+                x = event.layerX - offset.left,
+                y = event.layerY - offset.top,
+                type = event.handleObj.type
+            ;
+            if (type == 'dragstart') {
+                context.beginPath();
+                context.moveTo(x,y);
+            } else if (type == 'drag') {
+                context.lineTo(x,y);
+                context.stroke();
+            } else { // type == 'dragend'
+                context.closePath();
+            }
+        });
+    }
+
+    function updateUi() {
+        updateBrush();
+    }
+
+    function updateBrush() {
+        if (context) {
+            var brushProperties = brush.get();
+            if (brushProperties.type == 'eraser') {
+                context.globalCompositeOperation = 'copy';
+                context.strokeStyle = 'rgba(0,0,0,0)';
+                context.fillStyle = 'rgba(0,0,0,0)';
+            } else { // brushProperties.type == 'pen'
+                var color = brushProperties.color;
+                context.globalCompositeOperation = 'source-over';
+                context.strokeStyle = 'rgba(' + color.r + ',' + color.g + ',' +
+                    color.b + ',' + brushProperties.opacity + ')';
+                context.fillStyle = 'rgba(' + color.r + ',' + color.g + ',' +
+                    color.b + ',' + brushProperties.opacity + ')';
+            }
+            context.lineWidth = brushProperties.size;
+            context.lineCap = 'round';
+            context.lineJoin = 'round';
+        }
     }
 
     $(document).ready(initUi);
+    $(document).ready(updateUi);
 
-    return {};
+    brush.onchange('color', updateBrush);
+    brush.onchange('size', updateBrush);
+    brush.onchange('opacity', updateBrush);
+    brush.onchange('type', updateBrush);
+
+    return {
+        initUi:initUi,
+        updateUi:updateUi,
+        updateBrush:updateBrush
+    };
 }

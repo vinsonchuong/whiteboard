@@ -4,16 +4,17 @@ text chat to multiple simultaneous users.
 
 The drawing surface is built using HTML5 canvas and SVG. The overall user interface is powered by
 [jQuery](http://jquery.com),
-[jQuery UI](http://jqueryui.com), and
-[jQuery miniColors](http://abeautifulsite.net/blog/2011/02/jquery-minicolors-a-color-selector-for-input-controls/).
+[jQuery UI](http://jqueryui.com),
+[jQuery miniColors](http://abeautifulsite.net/blog/2011/02/jquery-minicolors-a-color-selector-for-input-controls/), and
+[jquery.event.drag](http://threedubmedia.com/code/event/drag)
 Client and server communication is powered by [Socket.IO](http://socket.io/).
 
 ## Licensing
-jQuery, jQuery UI, jQuery miniColors, and Socket.IO (dependencies of this project)
-are licensed under their own respective terms, which are listed in the
-relevant subdirectories.
+jQuery, jQuery UI, jQuery miniColors, jquery.event.drag, Socket.IO, and node-validator
+(included dependencies of this project) and their included dependencies are licensed
+under their own respective terms, which are listed in the relevant subdirectories.
 
-All other code is licensed under the MIT License as follows:
+All other code and assets are licensed under the MIT License as follows:
 
     Copyright (c) 2011 Vinson Chuong
 

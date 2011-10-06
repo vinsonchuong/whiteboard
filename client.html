@@ -9,6 +9,7 @@
         <script type="text/javascript" src="jquery/jquery.js"></script>
         <script type="text/javascript" src="jquery/jquery-ui/jquery-ui.js"></script>
         <script type="text/javascript" src="jquery/minicolors/jquery.miniColors.js"></script>
+        <script type="text/javascript" src="jquery/jquery.event.drag.js"></script>
         <script type="text/javascript" src="client.js"></script>
     </head>
     <body>
@@ -46,24 +47,24 @@
                 </ul>
             </div>
         </div>
-        <div id="canvas"></div>
+        <div id="drawingSurface">
+            <canvas id="canvas" width="858" height="480"></canvas>
+        </div>
         <div id="layers"></div>
         <div id="chat">
             <ol id="chatHistory">
-                <li>This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. </li>
-                <li>This is a message</li>
-                <li>This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. </li>
-                <li>This is a message</li>
-                <li>This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. </li>
-                <li>This is a message</li>
-                <li>This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. This is a message. </li>
-                <li>This is a message</li>
             </ol>
             <div id="chatInput">
                 <h1>Chat</h1>
                 <input type="text" id="chatText" class="text ui-widget-content ui-corner-all" />
                 <button id="chatSubmit">Send</button>
             </div>
+        </div>
+        <div id="signInDialog" title="Please give a username">
+            <fieldset>
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" class="text ui-widget-content ui-corner-all" />
+            </fieldset>
         </div>
     </body>
 </html>
