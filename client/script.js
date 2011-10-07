@@ -933,11 +933,12 @@ function initCanvasController() {
                             );
                             break;
                         case 'rectangle':
+                            width = x - startPoint.x;
                             previewRectangle(
                                 {
                                     x:startPoint.x,
                                     y:startPoint.y,
-                                    width:x - startPoint.x,
+                                    width:width,
                                     height:event.shiftKey ? width :
                                         y - startPoint.y
                                 },
