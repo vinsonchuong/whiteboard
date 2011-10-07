@@ -56,6 +56,7 @@ function initBrushModel(properties) {
         toolProperties = {
             pen:{color:1, size:1},
             eraser:{size:1},
+            line:{color:1, size:1},
             rectangle:{color:1, fill:1, size:1, opacity:1}
         },
 
@@ -475,17 +476,39 @@ function initCanvasController() {
         }
     }
 
+    function previewPath(points, brushProperties) {
+        var color = brushProperties.color;
+        clearPreview();
+        previewContext.globalCompositeOperation = 'source-over';
+        previewContext.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
+            color.b + ')';
+        previewContext.lineWidth = brushProperties.size;
+        previewContext.lineCap = 'round';
+        previewContext.lineJoin = 'round';
+        previewContext.beginPath();
+        var curPt = points[0];
+        previewContext.moveTo(curPt.x, curPt.y);
+        for (var ptNum = 0, numPts = points.length; ++ptNum < numPts;) {
+            curPt = points[ptNum];
+            previewContext.lineTo(curPt.x, curPt.y);
+        }
+        previewContext.closePath();
+        previewContext.stroke();
+    }
+
     function drawPath(points, brushProperties) {
         var color = brushProperties.color;
-        if (brushProperties.type == 'pen') {
+        if (brushProperties.type == 'eraser') {
+            context.globalCompositeOperation = 'copy';
+            context.strokeStyle = 'rgba(0,0,0,0)';
+        } else {
             context.globalCompositeOperation = 'source-over';
             context.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
                 color.b + ')';
-        } else { // brushProperties.type == 'eraser'
-            context.globalCompositeOperation = 'copy';
-            context.strokeStyle = 'rgba(0,0,0,0)';
         }
         context.lineWidth = brushProperties.size;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
         context.beginPath();
         var curPt = points[0];
         context.moveTo(curPt.x, curPt.y);
@@ -572,14 +595,14 @@ function initCanvasController() {
                 type = event.handleObj.type,
                 brushProperties = brush.get()
             ;
-            switch (brushProperties.type) {
-                case 'pen':
-                case 'eraser':
-                    switch (type) {
-                        case 'dragstart':
-                            startPoint = {x:x, y:y};
-                            break;
-                        case 'drag':
+            switch (type) {
+                case 'dragstart':
+                    startPoint = {x:x, y:y};
+                    break;
+                case 'drag':
+                    switch (brushProperties.type) {
+                        case 'pen':
+                        case 'eraser':
                             startPoint && canvas.addCommand({
                                 name:'drawPath',
                                 points:[
@@ -590,17 +613,16 @@ function initCanvasController() {
                             });
                             startPoint = {x:x, y:y};
                             break;
-                        case 'dragend':
-                            startPoint = null;
+                        case 'line':
+                            previewPath(
+                                [
+                                    startPoint,
+                                    {x:x, y:y}
+                                ],
+                                brushProperties
+                            );
                             break;
-                    }
-                    break;
-                case 'rectangle':
-                    switch (type) {
-                        case 'dragstart':
-                            startPoint = {x:x, y:y};
-                            break;
-                        case 'drag':
+                        case 'rectangle':
                             previewRectangle(
                                 {
                                     x:Math.min(x, startPoint.x),
@@ -611,7 +633,22 @@ function initCanvasController() {
                                 brush.get()
                             );
                             break;
-                        case 'dragend':
+                    }
+                    break;
+                case 'dragend':
+                    switch (brushProperties.type) {
+                        case 'line':
+                            canvas.addCommand({
+                                name:'drawPath',
+                                points:[
+                                    startPoint,
+                                    {x:x, y:y}
+                                ],
+                                brushProperties:brushProperties
+                            });
+                            clearPreview();
+                            break;
+                        case 'rectangle':
                             canvas.addCommand({
                                 name:'drawRectangle',
                                 dimensions:{
@@ -623,9 +660,10 @@ function initCanvasController() {
                                 brushProperties:brushProperties
                             });
                             clearPreview();
-                            startPoint = null;
                             break;
                     }
+                    startPoint = null;
+                    break;
             }
         });
 
