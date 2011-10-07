@@ -853,21 +853,23 @@ function initCanvasController() {
                             );
                             break;
                         case 'image':
-                            image = brushProperties.file.image;
-                            scalar = Math.abs(startPoint.x - x) / image.width;
-                            previewImage(
-                                {
-                                    x:Math.min(x, startPoint.x),
-                                    y:Math.min(y, startPoint.y),
-                                    width:event.shiftKey ?
-                                        image.width * scalar :
-                                        Math.abs(x - startPoint.x),
-                                    height:event.shiftKey ?
-                                        image.height * scalar :
-                                        Math.abs(y - startPoint.y)
-                                },
-                                brushProperties
-                            );
+                            if (brushProperties.file) {
+                                image = brushProperties.file.image;
+                                scalar = Math.abs(startPoint.x - x) / image.width;
+                                previewImage(
+                                    {
+                                        x:startPoint.x,
+                                        y:startPoint.y,
+                                        width:event.shiftKey ?
+                                            image.width * scalar :
+                                            Math.abs(x - startPoint.x),
+                                        height:event.shiftKey ?
+                                            image.height * scalar :
+                                            Math.abs(y - startPoint.y)
+                                    },
+                                    brushProperties
+                                );
+                            }
                             break;
                     }
                     break;
@@ -927,22 +929,24 @@ function initCanvasController() {
                             clearPreview();
                             break;
                         case 'image':
-                            image = brushProperties.file.image;
-                            scalar = Math.abs(startPoint.x - x) / image.width;
-                            canvas.addCommand({
-                                name:'drawImage',
-                                dimensions:{
-                                    x:Math.min(x, startPoint.x),
-                                    y:Math.min(y, startPoint.y),
-                                    width:event.shiftKey ?
-                                        image.width * scalar :
-                                        Math.abs(x - startPoint.x),
-                                    height:event.shiftKey ?
-                                        image.height * scalar :
-                                        Math.abs(y - startPoint.y)
-                                },
-                                brushProperties:brushProperties
-                            });
+                            if (brushProperties.file) {
+                                image = brushProperties.file.image;
+                                scalar = Math.abs(startPoint.x - x) / image.width;
+                                canvas.addCommand({
+                                    name:'drawImage',
+                                    dimensions:{
+                                        x:startPoint.x,
+                                        y:startPoint.y,
+                                        width:event.shiftKey ?
+                                            image.width * scalar :
+                                            Math.abs(x - startPoint.x),
+                                        height:event.shiftKey ?
+                                            image.height * scalar :
+                                            Math.abs(y - startPoint.y)
+                                    },
+                                    brushProperties:brushProperties
+                                });
+                            }
                             clearPreview();
                             break;
                     }
