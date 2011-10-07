@@ -1,13 +1,24 @@
 var
+    port = 4792,
+
     sanitizer = require('validator').sanitize,
-    io = require('socket.io').listen(4792),
-    chat = io.of('/chat')
+    express = require('express'),
+
+    server = express.createServer(),
+    io = require('socket.io').listen(server),
+    chat = io.of('/chat'),
     canvas = io.of('/canvas')
 ;
 
 function sanitize(string) {
     return sanitizer(string).entityDecode()
 }
+
+server.listen(port);
+
+server.get(/(^\/.*$)/, function(request, response) {
+    response.sendfile(__dirname + '/client' + request.params[0]);
+});
 
 chat.on('connection', function(socket) {
     socket.on('setName', function (name) {

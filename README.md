@@ -2,14 +2,16 @@
 Whiteboard is a collaborative workspace, providing a drawing surface and
 text chat to multiple simultaneous users.
 
-The drawing surface is built using HTML5 canvas and SVG. The overall user interface is powered by
+The drawing surface is built using HTML5 canvas. The overall user interface is powered by
 [jQuery](http://jquery.com),
 [jQuery UI](http://jqueryui.com),
 [jQuery miniColors](http://abeautifulsite.net/blog/2011/02/jquery-minicolors-a-color-selector-for-input-controls/),
 [fileinput](http://plugins.jquery.com/project/fileinput),
 [spinner](http://www.jqueryin.com/projects/spinner-jquery-preloader-plugin/), and
-[jquery.event.drag](http://threedubmedia.com/code/event/drag)
-Client and server communication is powered by [Socket.IO](http://socket.io/).
+[jquery.event.drag](http://threedubmedia.com/code/event/drag).
+Client and server communication for the chat and canvas is powered by [Socket.IO](http://socket.io/).
+File serving is powered by [Express](http://expressjs.com). Data sanitization is powered by
+[node-validator](https://github.com/chriso/node-validator).
 
 ## Usage
 
@@ -19,7 +21,7 @@ Client and server communication is powered by [Socket.IO](http://socket.io/).
 drawn as two-point paths, which prevents stroke opacity from displaying as expected.
 
 ## Licensing
-jQuery, jQuery UI, jQuery miniColors, fileinput, Spinner, jquery.event.drag, Socket.IO,
+jQuery, jQuery UI, jQuery miniColors, fileinput, Spinner, jquery.event.drag, Socket.IO, Express,
 and node-validator (included dependencies of this project) and their included dependencies
 are licensed under their own respective terms, which are listed in the relevant subdirectories.
 
