@@ -1,6 +1,6 @@
 /* Global State */
 var
-    serverName = 'http://localhost:4792',
+    serverName = 'http://' + window.location.host,
     chatServer = initChatServerAdapter(serverName),
     canvasServer = initCanvasServerAdapter(serverName),
 
@@ -287,6 +287,15 @@ function initCanvasModel() {
     }
 
     function sendCommand(command) {
+        if (command.name == 'drawImage') {
+            var properties = command.brushProperties;
+            command.brushProperties = {
+                type:'image',
+                file:{
+                    serialized:properties.file.serialized
+                }
+            }
+        }
         canvasServer.draw(command);
     }
 

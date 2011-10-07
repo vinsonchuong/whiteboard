@@ -1,5 +1,5 @@
 var
-    port = 4792,
+    port = +process.argv[2] || 8080,
 
     sanitizer = require('validator').sanitize,
     express = require('express'),
@@ -17,7 +17,11 @@ function sanitize(string) {
 server.listen(port);
 
 server.get(/(^\/.*$)/, function(request, response) {
-    response.sendfile(__dirname + '/client' + request.params[0]);
+    var fileName = request.params[0];
+    console.log(fileName);
+    if (fileName == '/')
+        fileName = '/index.html';
+    response.sendfile(__dirname + '/client' + fileName);
 });
 
 chat.on('connection', function(socket) {
