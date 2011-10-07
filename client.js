@@ -257,6 +257,17 @@ function initCanvasModel() {
         commandAddCallbacks = []
     ;
 
+    function runAddCallbacks() {
+        for (
+            var
+                funcNo = -1,
+                numFuncs = commandAddCallbacks.length
+            ;
+            ++funcNo < numFuncs;
+            )
+            commandAddCallbacks[funcNo]();
+    }
+
     function receiveCommand(command) {
         if (command.name == 'drawImage') {
             var
@@ -265,18 +276,14 @@ function initCanvasModel() {
             ;
             image.onload = function() {
                 file.image = image;
+                commands.push(command);
+                runAddCallbacks();
             };
             image.src = file.serialized;
+        } else {
+            commands.push(command);
+            runAddCallbacks();
         }
-        commands.push(command);
-        for (
-            var
-                funcNo = -1,
-                numFuncs = commandAddCallbacks.length
-            ;
-            ++funcNo < numFuncs;
-        )
-            commandAddCallbacks[funcNo]();
     }
 
     function sendCommand(command) {
@@ -617,6 +624,10 @@ function initCanvasController() {
             color = brushProperties.color,
             fill = brushProperties.fill
         ;
+        if (w < 0)
+            w = 0;
+        if (h < 0)
+            h = 0;
         clearPreview();
         previewContext.globalCompositeOperation = 'source-over';
         previewContext.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
@@ -641,6 +652,10 @@ function initCanvasController() {
             color = brushProperties.color,
             fill = brushProperties.fill
         ;
+        if (w < 0)
+            w = 0;
+        if (h < 0)
+            h = 0;
         context.globalCompositeOperation = 'source-over';
         context.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
             color.b + ')';
@@ -774,6 +789,10 @@ function initCanvasController() {
             w = dimensions.width,
             h = dimensions.height
         ;
+        if (w < 0)
+            w = 0;
+        if (h < 0)
+            h = 0;
         clearPreview();
         previewContext.globalCompositeOperation = 'source-over';
         previewContext.drawImage(brushProperties.file.image, x, y, w, h);
@@ -786,6 +805,10 @@ function initCanvasController() {
             w = dimensions.width,
             h = dimensions.height
         ;
+        if (w < 0)
+            w = 0;
+        if (h < 0)
+            h = 0;
         context.globalCompositeOperation = 'source-over';
         context.drawImage(brushProperties.file.image, x, y, w, h);
     }
@@ -869,14 +892,13 @@ function initCanvasController() {
                             );
                             break;
                         case 'rectangle':
-                            width = x - startPoint.x;
                             previewRectangle(
                                 {
-                                    x:Math.min(x, startPoint.x),
-                                    y:Math.min(y, startPoint.y),
-                                    width:Math.abs(width),
-                                    height:Math.abs(event.shiftKey ? width :
-                                        y - startPoint.y)
+                                    x:startPoint.x,
+                                    y:startPoint.y,
+                                    width:x - startPoint.x,
+                                    height:event.shiftKey ? width :
+                                        y - startPoint.y
                                 },
                                 brushProperties
                             );
@@ -902,10 +924,10 @@ function initCanvasController() {
                                         y:startPoint.y,
                                         width:event.shiftKey ?
                                             image.width * scalar :
-                                            Math.abs(x - startPoint.x),
+                                            x - startPoint.x,
                                         height:event.shiftKey ?
                                             image.height * scalar :
-                                            Math.abs(y - startPoint.y)
+                                            y - startPoint.y
                                     },
                                     brushProperties
                                 );
@@ -945,11 +967,11 @@ function initCanvasController() {
                             canvas.addCommand({
                                 name:'drawRectangle',
                                 dimensions:{
-                                    x:Math.min(x, startPoint.x),
-                                    y:Math.min(y, startPoint.y),
-                                    width:Math.abs(x - startPoint.x),
-                                    height:Math.abs(event.shiftKey ? width :
-                                        y - startPoint.y)
+                                    x:startPoint.x,
+                                    y:startPoint.y,
+                                    width:x - startPoint.x,
+                                    height:event.shiftKey ? width :
+                                        y - startPoint.y
                                 },
                                 brushProperties:brushProperties
                             });
@@ -979,10 +1001,10 @@ function initCanvasController() {
                                         y:startPoint.y,
                                         width:event.shiftKey ?
                                             image.width * scalar :
-                                            Math.abs(x - startPoint.x),
+                                            x - startPoint.x,
                                         height:event.shiftKey ?
                                             image.height * scalar :
-                                            Math.abs(y - startPoint.y)
+                                            y - startPoint.y
                                     },
                                     brushProperties:brushProperties
                                 });
