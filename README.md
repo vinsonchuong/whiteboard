@@ -2,7 +2,8 @@
 Whiteboard is a collaborative workspace, providing a drawing surface and
 text chat to multiple simultaneous users.
 
-The drawing surface is built using HTML5 canvas. The overall user interface is powered by
+The drawing surface is built using HTML5 canvas and SVG. The overall user interface is powered by
+[Raphael](http://raphaeljs.com),
 [jQuery](http://jquery.com),
 [jQuery UI](http://jqueryui.com),
 [jQuery miniColors](http://abeautifulsite.net/blog/2011/02/jquery-minicolors-a-color-selector-for-input-controls/),
@@ -17,15 +18,17 @@ File serving is powered by [Express](http://expressjs.com). Data sanitization is
 * First, install [node.js](http://nodejs.org) (this project was developed using
 the unstable v0.5.8 Windows binary).
 * Start the server by running `node server.js [PORT]`. If not specified, `PORT` defaults to `8080`.
+Remember to open the port in your firewall if you're looking to accept outside connections.
 * In Chrome (there is a pending issue in Firefox and IE), visit `http://server:port`
 (eg. `http://localhost:8080`).
 
 ## Interface Notes
+* History starts from the first action taken.
 * The Line, Rectangle, and Image tools can be snapped (as in Photoshop) by holding `Shift`. Try it out!
 * In preview mode, the Rectangle and Image tools can only be resized to the bottom-right.
 * Actions in preview mode are not shown in history nor are they shown to other users. In other words,
 when sizing a Rectangle, other users will only see the final result.
-* Please specify a name other than "Server". I'm still deciding how/if I will reserve names.
+* Please specify unique names other than "Server". I'm still deciding how/if I will reserve names.
 
 ## Issues
 * To allow the canvas to be updated simultaneously by multiple users, pen strokes are
@@ -33,7 +36,7 @@ drawn as two-point paths, which prevents stroke opacity from displaying as expec
 * The eraser tool seems to break in Firefox and IE.
 
 ## Licensing
-jQuery, jQuery UI, jQuery miniColors, fileinput, Spinner, jquery.event.drag, Socket.IO, Express,
+Raphael, jQuery, jQuery UI, jQuery miniColors, fileinput, Spinner, jquery.event.drag, Socket.IO, Express,
 and node-validator (included dependencies of this project) and their included dependencies
 are licensed under their own respective terms, which are listed in the relevant subdirectories.
 

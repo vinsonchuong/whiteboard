@@ -179,8 +179,11 @@ q {
     position:relative;
     width:83.8em;
 }
-#drawingSurface canvas {
-    position:absolute;
+#drawingSurface > * {
+    position:absolute !important;
+}
+#drawingSurface svg {
+    z-index:10;
 }
 
 #history {

@@ -18,13 +18,12 @@ server.listen(port);
 
 server.get(/(^\/.*$)/, function(request, response) {
     var fileName = request.params[0];
-    console.log(fileName);
     if (fileName == '/')
         fileName = '/index.html';
     response.sendfile(__dirname + '/client' + fileName);
 });
 
-chat.on('connection', function(socket) {
+io.sockets.on('connection', function(socket) {
     socket.on('setName', function (name) {
         name = sanitize(name);
         socket.set('name', name);
@@ -44,19 +43,29 @@ chat.on('connection', function(socket) {
         })
     });
 
-    socket.on('disconnect', function() {
+    socket.on('draw', function (command) {
+        io.sockets.emit('draw', command)
+    });
+
+    socket.on('updateCursor', function(position) {
         socket.get('name', function(error, name) {
             if (name)
+                socket.broadcast.emit('updateCursor', {
+                    name:name,
+                    position:position
+                });
+        });
+    });
+
+    socket.on('disconnect', function() {
+        socket.get('name', function(error, name) {
+            if (name) {
                 socket.broadcast.emit('receive', {
                     sender:'Server',
                     message:name + ' has left.'
-                })
+                });
+                socket.broadcast.emit('removeCursor', name);
+            }
         })
-    });
-});
-
-canvas.on('connection', function(socket) {
-    socket.on('draw', function (command) {
-        canvas.emit('draw', command)
     });
 });

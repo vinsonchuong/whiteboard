@@ -1,8 +1,9 @@
 /* Global State */
 var
-    serverName = 'http://' + window.location.host,
-    chatServer = initChatServerAdapter(serverName),
-    canvasServer = initCanvasServerAdapter(serverName),
+    server = io.connect('http://' + window.location.host),
+    chatServer = initChatServerAdapter(),
+    cursorServer = initCursorServerAdapter(),
+    canvasServer = initCanvasServerAdapter(),
 
     brush = initBrushModel({
         type:'pen',
@@ -16,15 +17,13 @@ var
 
     brushController = initBrushController(),
     chatController = initChatController(),
+    cursorController = initCursorController(),
     canvasController = initCanvasController()
 ;
 
 /* Models */
-function initChatServerAdapter(serverName) {
-    var
-        server = io.connect(serverName + '/chat'),
-        receiveCallbacks = []
-    ;
+function initChatServerAdapter() {
+    var receiveCallbacks = [];
 
     server.on('receive', function(message) {
         var
@@ -37,7 +36,7 @@ function initChatServerAdapter(serverName) {
                 numFuncs = receiveCallbacks.length
             ;
             ++funcNo < numFuncs;
-            )
+        )
             receiveCallbacks[funcNo](sanitizedSender, sanitizedMessage);
     });
 
@@ -48,11 +47,8 @@ function initChatServerAdapter(serverName) {
     }
 }
 
-function initCanvasServerAdapter(serverName) {
-    var
-        server = io.connect(serverName + '/canvas'),
-        receiveCallbacks = []
-    ;
+function initCanvasServerAdapter() {
+    var receiveCallbacks = [];
 
     server.on('draw', function(command) {
         for (
@@ -61,13 +57,49 @@ function initCanvasServerAdapter(serverName) {
                 numFuncs = receiveCallbacks.length
             ;
             ++funcNo < numFuncs;
-            )
-                receiveCallbacks[funcNo](command);
+        )
+            receiveCallbacks[funcNo](command);
     });
 
     return {
         draw:function(command) {server.emit('draw', command)},
         onreceive:function(callback) {receiveCallbacks.push(callback)}
+    }
+}
+
+function initCursorServerAdapter() {
+    var receiveCallbacks = [];
+
+    server.on('updateCursor', function(cursor) {
+        var
+            sanitizedSender = $('<div />').text(cursor.name).html(),
+            position = cursor.position
+        ;
+        for (
+            var
+                funcNo = -1,
+                numFuncs = receiveCallbacks.length
+            ;
+            ++funcNo < numFuncs;
+        )
+            receiveCallbacks[funcNo](sanitizedSender, position);
+    });
+
+    server.on('removeCursor', function(name) {
+        var sanitizedSender = $('<div />').text(name).html();
+        for (
+            var
+                funcNo = -1,
+                numFuncs = receiveCallbacks.length
+            ;
+            ++funcNo < numFuncs;
+        )
+            receiveCallbacks[funcNo](sanitizedSender);
+    });
+
+    return {
+        update:function(position) {server.emit('updateCursor', position)},
+        onmove:function(callback) {receiveCallbacks.push(callback)}
     }
 }
 
@@ -1073,3 +1105,72 @@ function initCanvasController() {
         updateUi:updateUi
     };
 }
+
+function initCursorController() {
+    var
+        container,
+        svgCanvas,
+        cursors = {}
+    ;
+
+    function initUi() {
+        container = $('#drawingSurface');
+        svgCanvas = new Raphael(container[0], container.width(), container.height());
+
+        container.mousemove(function(event) {
+            cursorServer.update({
+                x:event.layerX,
+                y:event.layerY
+            });
+        });
+    }
+
+    function updateUi() {
+    }
+
+    cursorServer.onmove(function (name, position) {
+        var cursor = cursors[name];
+        if (!position && cursor) {
+            cursor.circle.remove();
+            cursor.text.remove();
+            delete cursors[name];
+        } else if (!cursor && position) {
+            var
+                x = position.x,
+                y = position.y
+            ;
+            cursor = cursors[name] = {
+                circle:svgCanvas.circle(position.x, position.y, 12),
+                text:svgCanvas.text(position.x, position.y + 16, name)
+            };
+            cursor.circle.attr({
+                fill:'#999',
+                opacity:0.5,
+                'stroke-opacity':0
+            });
+            cursor.text.attr({
+                fill:'#999',
+                'font-size':10,
+                opacity:1
+            });
+        } else if (cursor && position) {
+            cursor.circle.attr({
+                cx:position.x,
+                cy:position.y
+            });
+            cursor.text.attr({
+                x:position.x,
+                y:position.y + 16
+            });
+        }
+    });
+
+    $(document).ready(initUi);
+    $(document).ready(updateUi);
+
+    return {
+        initUi:initUi,
+        updateUi:updateUi
+    }
+}
+
