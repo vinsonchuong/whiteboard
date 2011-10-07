@@ -2,6 +2,7 @@ var
     sanitizer = require('validator').sanitize,
     io = require('socket.io').listen(4792),
     chat = io.of('/chat')
+    canvas = io.of('/canvas')
 ;
 
 function sanitize(string) {
@@ -36,5 +37,11 @@ chat.on('connection', function(socket) {
                     message:name + ' has left.'
                 })
         })
+    });
+});
+
+canvas.on('connection', function(socket) {
+    socket.on('draw', function (command) {
+        canvas.emit('draw', command)
     });
 });

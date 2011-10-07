@@ -2,6 +2,7 @@
 var
     serverName = 'http://localhost:4792',
     chatServer = initChatServerAdapter(serverName),
+    canvasServer = initCanvasServerAdapter(serverName),
 
     brush = initBrushModel({
         type:'pen',
@@ -25,28 +26,47 @@ function initChatServerAdapter(serverName) {
         receiveCallbacks = []
     ;
 
-    function callReceiveCallbacks(sender, message) {
+    server.on('receive', function(message) {
+        var
+            sanitizedSender = $('<div />').text(message.sender).html(),
+            sanitizedMessage = $('<div />').text(message.message).html()
+        ;
         for (
             var
                 funcNo = -1,
                 numFuncs = receiveCallbacks.length
             ;
             ++funcNo < numFuncs;
-        )
-            receiveCallbacks[funcNo](sender, message)
-    }
-
-    server.on('receive', function(message) {
-        var
-            sanitizedSender = $('<div />').text(message.sender).html(),
-            sanitizedMessage = $('<div />').text(message.message).html()
-        ;
-        callReceiveCallbacks(sanitizedSender, sanitizedMessage);
+            )
+            receiveCallbacks[funcNo](sanitizedSender, sanitizedMessage);
     });
 
     return {
         setName:function(name) {server.emit('setName', name)},
         send:function(message) {server.emit('send', message)},
+        onreceive:function(callback) {receiveCallbacks.push(callback)}
+    }
+}
+
+function initCanvasServerAdapter(serverName) {
+    var
+        server = io.connect(serverName + '/canvas'),
+        receiveCallbacks = []
+    ;
+
+    server.on('draw', function(command) {
+        for (
+            var
+                funcNo = -1,
+                numFuncs = receiveCallbacks.length
+            ;
+            ++funcNo < numFuncs;
+            )
+                receiveCallbacks[funcNo](command);
+    });
+
+    return {
+        draw:function(command) {server.emit('draw', command)},
         onreceive:function(callback) {receiveCallbacks.push(callback)}
     }
 }
@@ -237,7 +257,17 @@ function initCanvasModel() {
         commandAddCallbacks = []
     ;
 
-    function addCommand(command) {
+    function receiveCommand(command) {
+        if (command.name == 'drawImage') {
+            var
+                file = command.brushProperties.file,
+                image = new Image()
+            ;
+            image.onload = function() {
+                file.image = image;
+            };
+            image.src = file.serialized;
+        }
         commands.push(command);
         for (
             var
@@ -249,9 +279,15 @@ function initCanvasModel() {
             commandAddCallbacks[funcNo]();
     }
 
+    function sendCommand(command) {
+        canvasServer.draw(command);
+    }
+
+    canvasServer.onreceive(receiveCommand);
+
     return {
         getCommands:function() {return commands},
-        addCommand:addCommand,
+        addCommand:sendCommand,
         onadd:function (callback) {commandAddCallbacks.push(callback)}
     }
 }
