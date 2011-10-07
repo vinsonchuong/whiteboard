@@ -17,8 +17,6 @@ Client and server communication is powered by [Socket.IO](http://socket.io/).
 ## Issues
 * To allow the canvas to be updated simultaneously by multiple users, pen strokes are
 drawn as two-point paths, which prevents stroke opacity from displaying as expected.
-* Chrome requires `client.html` to be served from a server for image uploading to
-work (see [Chrome FileReader](http://stackoverflow.com/questions/4100927/chrome-filereader)).
 
 ## Licensing
 jQuery, jQuery UI, jQuery miniColors, fileinput, Spinner, jquery.event.drag, Socket.IO,

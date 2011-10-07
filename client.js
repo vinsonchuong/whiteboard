@@ -499,6 +499,8 @@ function initCanvasController() {
     var
         container,
         clearButton,
+        historySlider,
+        viewingHistory = false,
 
         context,
         previewContext,
@@ -763,6 +765,7 @@ function initCanvasController() {
     function initUi() {
         container = $('#drawingSurface');
         clearButton = $('#clear');
+        historySlider = $('#historySlider');
 
         var canvasElem = $('<canvas width="' + container.width() +
             '" height="' + container.height() + '"></canvas>');
@@ -773,7 +776,6 @@ function initCanvasController() {
             '" height="' + container.height() + '"></canvas>');
         previewCanvasElem.appendTo(container);
         previewContext = previewCanvasElem[0].getContext('2d');
-
 
         container.live('drag dragstart dragend', function(event) {
             var
@@ -787,6 +789,8 @@ function initCanvasController() {
                 type = event.handleObj.type,
                 brushProperties = brush.get()
             ;
+            if (viewingHistory)
+                return;
             switch (type) {
                 case 'dragstart':
                     startPoint = {x:x, y:y};
@@ -961,14 +965,37 @@ function initCanvasController() {
                 name:'clear'
             })
         });
+
+        historySlider.slider({
+            range:'min',
+            min:0,
+            max:0,
+            slide:function(event, ui) {
+                var
+                    commands = canvas.getCommands(),
+                    toIndex = ui.value
+                ;
+                viewingHistory = toIndex != commands.length - 1;
+                clear();
+                for (var commandNo = -1; ++commandNo <= toIndex;)
+                    executeCommand(commands[commandNo]);
+                viewingHistory = toIndex != commands.length - 1;
+            }
+        });
     }
 
     function updateUi() {
     }
 
     canvas.onadd(function () {
-        var commands = canvas.getCommands();
-        executeCommand(commands[commands.length - 1]);
+        var
+            commands = canvas.getCommands(),
+            lastIndex = commands.length - 1
+        ;
+        viewingHistory || executeCommand(commands[commands.length - 1]);
+        historySlider.slider('option', 'max', lastIndex);
+        if (historySlider.slider('option', 'value') == lastIndex - 1)
+            historySlider.slider('option', 'value', lastIndex);
     });
 
     $(document).ready(initUi);

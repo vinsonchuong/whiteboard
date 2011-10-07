@@ -153,12 +153,11 @@ q {
 #tools {
     border-right:1px dashed #aaa;
     float:left;
-    height:48em;
+    height:44em;
     margin-right:0 !important;
     width:11.9em;
 }
 #tools > div {
-    border-bottom:1px dashed #aaa;
     padding-bottom:3.6em;
 }
 #tools h1 {
@@ -175,7 +174,7 @@ q {
 }
 
 #drawingSurface {
-    height:48em;
+    height:44em;
     float:left;
     position:relative;
     width:83.8em;
@@ -184,9 +183,29 @@ q {
     position:absolute;
 }
 
+#history {
+    clear:both;
+    height:3.9em;
+    border-top:1px dashed #aaa;
+    text-align:center;
+    vertical-align:middle;
+}
+#history > * {
+    display:inline-block !important;
+    font-size:1.6em;
+    line-height:2.3em;
+    vertical-align:middle;
+}
+#history h1 {
+    font-weight:bold;
+}
+#historySlider {
+    margin-left:1em;
+    width:52em;
+}
+
 #chat {
     border-top:1px dashed #aaa;
-    clear:both;
     height:13.7em;
     position:relative;
 }
