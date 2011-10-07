@@ -57,7 +57,9 @@ function initBrushModel(properties) {
             pen:{color:1, size:1},
             eraser:{size:1},
             line:{color:1, size:1},
-            rectangle:{color:1, fill:1, size:1, opacity:1}
+            rectangle:{color:1, fill:1, size:1, opacity:1},
+            circle:{color:1, fill:1, size:1, opacity:1},
+            image:{file:1}
         },
 
         type = properties.type,
@@ -69,7 +71,9 @@ function initBrushModel(properties) {
         size = properties.size,
         sizeChangeCallbacks = [],
         opacity = properties.opacity,
-        opacityChangeCallbacks = []
+        opacityChangeCallbacks = [],
+        file = properties.file,
+        fileChangeCallbacks = []
     ;
 
     function getProperties() {
@@ -85,6 +89,8 @@ function initBrushModel(properties) {
             properties.size = size;
         if (validPropertyLookup.opacity && opacity)
             properties.opacity = opacity;
+        if (validPropertyLookup.file && file)
+            properties.file = file;
         return properties;
     }
 
@@ -120,6 +126,10 @@ function initBrushModel(properties) {
             opacity = properties.opacity;
             runFunctions(opacityChangeCallbacks);
         }
+        if (validPropertyLookup.file && properties.file) {
+            file = properties.file;
+            runFunctions(fileChangeCallbacks);
+        }
     }
 
     function setProperty(name, value) {
@@ -149,6 +159,8 @@ function initBrushModel(properties) {
                 sizeChangeCallbacks.push(callback);
             if (property == 'opacity')
                 opacityChangeCallbacks.push(callback);
+            if (property == 'file')
+                fileChangeCallbacks.push(callback);
         }
     };
 }
@@ -156,11 +168,15 @@ function initBrushModel(properties) {
 function initChatModel() {
     var
         name,
-        messages = [{
-            sender:'Server',
-            message:'Welcome to Whiteboard, a shared drawing surface ' +
-                'supporting multiple simultaneous users.'
-        }],
+        messages = [
+            {
+                sender:'Server',
+                message:'Welcome to Whiteboard, a shared drawing surface ' +
+                    'supporting multiple simultaneous users. Tip: For ' +
+                    'shape/image tools, hold Shift to snap to a fixed angle ' +
+                    'or aspect-ratio.'
+            }
+        ],
         messageAddCallbacks = []
     ;
 
@@ -249,6 +265,7 @@ function initBrushController() {
         sizeValue,
         opacityPicker,
         opacityValue,
+        filePicker,
         toolPicker,
 
         enableToolChangeEvent = true
@@ -261,6 +278,7 @@ function initBrushController() {
         sizeValue = $('#sizeValue');
         opacityPicker = $('#opacity');
         opacityValue = $('#opacityValue');
+        filePicker = $('#file');
         toolPicker = $('#tools');
 
         colorPicker.miniColors({
@@ -296,6 +314,29 @@ function initBrushController() {
                 brush.set('opacity', opacity);
                 opacityValue.text(Math.round(opacity * 100) + '%');
             }
+        });
+
+        filePicker.fileinput({inputText:'None'});
+        filePicker.change(function() {
+            var
+                fileReader = new FileReader(),
+                image = new Image()
+            ;
+            filePicker.parent().spinner({
+                img:'jquery/spinner/spinner.gif',
+                position:'right'
+            });
+            fileReader.onloadend = function() {
+                image.onload = function() {
+                    brush.set('file', {
+                        image:image,
+                        serialized:fileReader.result
+                    });
+                    filePicker.parent().spinner('remove');
+                };
+                image.src = fileReader.result;
+            };
+            fileReader.readAsDataURL(filePicker[0].files[0]);
         });
 
         toolPicker.buttonset();
@@ -358,6 +399,8 @@ function initBrushController() {
         validProperties.fill ? fillPicker.parent().show() : fillPicker.parent().hide();
         validProperties.size ? sizePicker.parent().show() : sizePicker.parent().hide();
         validProperties.opacity ? opacityPicker.parent().show() : opacityPicker.parent().hide();
+        validProperties.file ? filePicker.parent().parent().show() :
+            filePicker.parent().parent().hide();
         updateOpacity();
     }
 
@@ -470,6 +513,12 @@ function initCanvasController() {
             case 'drawRectangle':
                 drawRectangle(command.dimensions, command.brushProperties);
                 break;
+            case 'drawCircle':
+                drawCircle(command.dimensions, command.brushProperties);
+                break;
+            case 'drawImage':
+                drawImage(command.dimensions, command.brushProperties);
+                break;
             case 'clear':
                 clear();
                 break;
@@ -566,6 +615,143 @@ function initCanvasController() {
         context.fillRect(x + size / 2.0, y + size / 2.0, w - size, h - size);
     }
 
+    function previewCircle(dimensions, brushProperties) {
+        var
+            size = brushProperties.size,
+            color = brushProperties.color,
+            fill = brushProperties.fill
+        ;
+        clearPreview();
+        previewContext.globalCompositeOperation = 'source-over';
+        previewContext.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
+            color.b + ')';
+        previewContext.fillStyle = 'rgba(' + fill.r + ',' + fill.g + ',' +
+            fill.b + ',' + brushProperties.opacity + ')';
+        previewContext.lineWidth = Math.round(brushProperties.size / 2.0) * 2;
+        previewContext.lineCap = 'round';
+        previewContext.lineJoin = 'round';
+        previewContext.beginPath();
+        previewContext.arc(dimensions.cx, dimensions.cy, dimensions.r, 0,
+            2 * Math.PI, false);
+        previewContext.closePath();
+        previewContext.fill();
+        previewContext.stroke();
+    }
+
+    function drawCircle(dimensions, brushProperties) {
+        var
+            size = brushProperties.size,
+            color = brushProperties.color,
+            fill = brushProperties.fill
+        ;
+        context.globalCompositeOperation = 'source-over';
+        context.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
+            color.b + ')';
+        context.fillStyle = 'rgba(' + fill.r + ',' + fill.g + ',' +
+            fill.b + ',' + brushProperties.opacity + ')';
+        context.lineWidth = Math.round(brushProperties.size / 2.0) * 2;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.beginPath();
+        context.arc(dimensions.cx, dimensions.cy, dimensions.r, 0,
+            2 * Math.PI, false);
+        context.closePath();
+        context.fill();
+        context.stroke();
+    }
+
+    function previewEllipse(dimensions, brushProperties) {
+        var
+            size = brushProperties.size,
+            lx = dimensions.x,
+            ty = dimensions.y + size / 2.0,
+            w = dimensions.width,
+            h = dimensions.height,
+            mx = lx + w / 2.0,
+            rx = lx + w,
+            by = ty + h - size,
+            color = brushProperties.color,
+            fill = brushProperties.fill
+        ;
+        previewRectangle(
+            dimensions,
+            {
+                size:1,
+                color:{r:0, g:0, b:0},
+                fill:{r:255, g:255, b:255},
+                opacity:0
+            }
+        );
+        previewContext.globalCompositeOperation = 'source-over';
+        previewContext.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
+            color.b + ')';
+        previewContext.fillStyle = 'rgba(' + fill.r + ',' + fill.g + ',' +
+            fill.b + ',' + brushProperties.opacity + ')';
+        previewContext.lineWidth = Math.round(brushProperties.size / 2.0) * 2;
+        previewContext.lineCap = 'round';
+        previewContext.lineJoin = 'round';
+        previewContext.beginPath();
+        previewContext.moveTo(mx, ty);
+        previewContext.bezierCurveTo(rx, ty, rx, by, mx, by);
+        previewContext.bezierCurveTo(lx, by, lx, ty, mx, ty);
+        previewContext.closePath();
+        previewContext.stroke();
+        previewContext.fill();
+    }
+
+    function drawEllipse(dimensions, brushProperties) {
+        var
+            size = brushProperties.size,
+            lx = dimensions.x,
+            ty = dimensions.y + size / 2.0,
+            w = dimensions.width,
+            h = dimensions.height,
+            mx = lx + w / 2.0,
+            rx = lx + w,
+            by = ty + h - size,
+            color = brushProperties.color,
+            fill = brushProperties.fill
+        ;
+        context.globalCompositeOperation = 'source-over';
+        context.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
+            color.b + ')';
+        context.fillStyle = 'rgba(' + fill.r + ',' + fill.g + ',' +
+            fill.b + ',' + brushProperties.opacity + ')';
+        context.lineWidth = Math.round(brushProperties.size / 2.0) * 2;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.beginPath();
+        context.moveTo(mx, ty);
+        context.bezierCurveTo(rx, ty, rx, by, mx, by);
+        context.bezierCurveTo(lx, by, lx, ty, mx, ty);
+        context.closePath();
+        context.stroke();
+        context.fill();
+    }
+
+    function previewImage(dimensions, brushProperties) {
+        var
+            x = dimensions.x,
+            y = dimensions.y,
+            w = dimensions.width,
+            h = dimensions.height
+        ;
+        clearPreview();
+        previewContext.globalCompositeOperation = 'source-over';
+        previewContext.drawImage(brushProperties.file.image, x, y, w, h);
+    }
+
+    function drawImage(dimensions, brushProperties) {
+        var
+            x = dimensions.x,
+            y = dimensions.y,
+            w = dimensions.width,
+            h = dimensions.height
+        ;
+        context.globalCompositeOperation = 'source-over';
+        context.drawImage(brushProperties.file.image, x, y, w, h);
+    }
+
     function clear() {
         context.clearRect(0, 0, container.width(), container.height())
     }
@@ -588,10 +774,16 @@ function initCanvasController() {
         previewCanvasElem.appendTo(container);
         previewContext = previewCanvasElem[0].getContext('2d');
 
+
         container.live('drag dragstart dragend', function(event) {
             var
                 x = event.layerX,
                 y = event.layerY,
+                dx,
+                dy,
+                width,
+                image,
+                scalar,
                 type = event.handleObj.type,
                 brushProperties = brush.get()
             ;
@@ -614,6 +806,20 @@ function initCanvasController() {
                             startPoint = {x:x, y:y};
                             break;
                         case 'line':
+                            if (event.shiftKey) {
+                                dx = x - startPoint.x,
+                                dy = y - startPoint.y
+                                if (dy > dx)
+                                    if (dy > - dx) // top
+                                        x = startPoint.x;
+                                    else // left
+                                        y = startPoint.y;
+                                else
+                                    if (dy > - dx) // right
+                                        y = startPoint.y;
+                                    else // bottom
+                                        x = startPoint.x;
+                            }
                             previewPath(
                                 [
                                     startPoint,
@@ -623,14 +829,44 @@ function initCanvasController() {
                             );
                             break;
                         case 'rectangle':
+                            width = x - startPoint.x;
                             previewRectangle(
                                 {
                                     x:Math.min(x, startPoint.x),
                                     y:Math.min(y, startPoint.y),
-                                    width:Math.abs(x - startPoint.x),
-                                    height:Math.abs(y - startPoint.y)
+                                    width:Math.abs(width),
+                                    height:Math.abs(event.shiftKey ? width :
+                                        y - startPoint.y)
                                 },
-                                brush.get()
+                                brushProperties
+                            );
+                            break;
+                        case 'circle':
+                            previewCircle(
+                                {
+                                    cx:startPoint.x,
+                                    cy:startPoint.y,
+                                    r:Math.sqrt(Math.pow(x - startPoint.x, 2) +
+                                        Math.pow(y - startPoint.y, 2))
+                                },
+                                brushProperties
+                            );
+                            break;
+                        case 'image':
+                            image = brushProperties.file.image;
+                            scalar = Math.abs(startPoint.x - x) / image.width;
+                            previewImage(
+                                {
+                                    x:Math.min(x, startPoint.x),
+                                    y:Math.min(y, startPoint.y),
+                                    width:event.shiftKey ?
+                                        image.width * scalar :
+                                        Math.abs(x - startPoint.x),
+                                    height:event.shiftKey ?
+                                        image.height * scalar :
+                                        Math.abs(y - startPoint.y)
+                                },
+                                brushProperties
                             );
                             break;
                     }
@@ -638,6 +874,20 @@ function initCanvasController() {
                 case 'dragend':
                     switch (brushProperties.type) {
                         case 'line':
+                            if (event.shiftKey) {
+                                dx = x - startPoint.x,
+                                dy = y - startPoint.y
+                                if (dy > dx)
+                                    if (dy > - dx) // top
+                                        x = startPoint.x;
+                                    else // left
+                                        y = startPoint.y;
+                                else
+                                if (dy > - dx) // right
+                                    y = startPoint.y;
+                                else // bottom
+                                    x = startPoint.x;
+                            }
                             canvas.addCommand({
                                 name:'drawPath',
                                 points:[
@@ -649,13 +899,47 @@ function initCanvasController() {
                             clearPreview();
                             break;
                         case 'rectangle':
+                            width = x - startPoint.x;
                             canvas.addCommand({
                                 name:'drawRectangle',
                                 dimensions:{
                                     x:Math.min(x, startPoint.x),
                                     y:Math.min(y, startPoint.y),
                                     width:Math.abs(x - startPoint.x),
-                                    height:Math.abs(y - startPoint.y)
+                                    height:Math.abs(event.shiftKey ? width :
+                                        y - startPoint.y)
+                                },
+                                brushProperties:brushProperties
+                            });
+                            clearPreview();
+                            break;
+                        case 'circle':
+                            canvas.addCommand({
+                                name:'drawCircle',
+                                dimensions:{
+                                    cx:startPoint.x,
+                                    cy:startPoint.y,
+                                    r:Math.sqrt(Math.pow(x - startPoint.x, 2) +
+                                        Math.pow(y - startPoint.y, 2))
+                                },
+                                brushProperties:brushProperties
+                            });
+                            clearPreview();
+                            break;
+                        case 'image':
+                            image = brushProperties.file.image;
+                            scalar = Math.abs(startPoint.x - x) / image.width;
+                            canvas.addCommand({
+                                name:'drawImage',
+                                dimensions:{
+                                    x:Math.min(x, startPoint.x),
+                                    y:Math.min(y, startPoint.y),
+                                    width:event.shiftKey ?
+                                        image.width * scalar :
+                                        Math.abs(x - startPoint.x),
+                                    height:event.shiftKey ?
+                                        image.height * scalar :
+                                        Math.abs(y - startPoint.y)
                                 },
                                 brushProperties:brushProperties
                             });

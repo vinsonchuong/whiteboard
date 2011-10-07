@@ -137,6 +137,18 @@ q {
 #opacityValue {
     width:2.7em;
 }
+.fileinput-wrapper > span {
+    height:auto;
+    line-height:1.5;
+    vertical-align:middle;
+}
+.fileinput-wrapper > span:first-child {
+    width:19em;
+}
+#url {
+    line-height:1.5;
+    width:19em;
+}
 
 #tools {
     border-right:1px dashed #aaa;

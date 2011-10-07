@@ -5,14 +5,25 @@ text chat to multiple simultaneous users.
 The drawing surface is built using HTML5 canvas and SVG. The overall user interface is powered by
 [jQuery](http://jquery.com),
 [jQuery UI](http://jqueryui.com),
-[jQuery miniColors](http://abeautifulsite.net/blog/2011/02/jquery-minicolors-a-color-selector-for-input-controls/), and
+[jQuery miniColors](http://abeautifulsite.net/blog/2011/02/jquery-minicolors-a-color-selector-for-input-controls/),
+[fileinput](http://plugins.jquery.com/project/fileinput),
+[spinner](http://www.jqueryin.com/projects/spinner-jquery-preloader-plugin/), and
 [jquery.event.drag](http://threedubmedia.com/code/event/drag)
 Client and server communication is powered by [Socket.IO](http://socket.io/).
 
+## Usage
+
+
+## Issues
+* To allow the canvas to be updated simultaneously by multiple users, pen strokes are
+drawn as two-point paths, which prevents stroke opacity from displaying as expected.
+* Chrome requires `client.html` to be served from a server for image uploading to
+work (see [Chrome FileReader](http://stackoverflow.com/questions/4100927/chrome-filereader)).
+
 ## Licensing
-jQuery, jQuery UI, jQuery miniColors, jquery.event.drag, Socket.IO, and node-validator
-(included dependencies of this project) and their included dependencies are licensed
-under their own respective terms, which are listed in the relevant subdirectories.
+jQuery, jQuery UI, jQuery miniColors, fileinput, Spinner, jquery.event.drag, Socket.IO,
+and node-validator (included dependencies of this project) and their included dependencies
+are licensed under their own respective terms, which are listed in the relevant subdirectories.
 
 All other code and assets are licensed under the MIT License as follows:
 
