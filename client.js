@@ -276,7 +276,7 @@ function initBrushController() {
 
         sizePicker.slider({
             range:'min',
-            min:0,
+            min:1,
             max:50,
             slide:function(event, ui) {
                 var size = ui.value;
@@ -457,14 +457,17 @@ function initCanvasController() {
         clearButton,
 
         context,
-        tempContext,
+        previewContext,
         startPoint
     ;
 
     function executeCommand(command) {
         switch(command.name) {
             case 'drawPath':
-                drawPath(command.points);
+                drawPath(command.points, command.brushProperties);
+                break;
+            case 'drawRectangle':
+                drawRectangle(command.dimensions, command.brushProperties);
                 break;
             case 'clear':
                 clear();
@@ -472,7 +475,17 @@ function initCanvasController() {
         }
     }
 
-    function drawPath(points) {
+    function drawPath(points, brushProperties) {
+        var color = brushProperties.color;
+        if (brushProperties.type == 'pen') {
+            context.globalCompositeOperation = 'source-over';
+            context.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
+                color.b + ')';
+        } else { // brushProperties.type == 'eraser'
+            context.globalCompositeOperation = 'copy';
+            context.strokeStyle = 'rgba(0,0,0,0)';
+        }
+        context.lineWidth = brushProperties.size;
         context.beginPath();
         var curPt = points[0];
         context.moveTo(curPt.x, curPt.y);
@@ -484,8 +497,58 @@ function initCanvasController() {
         context.stroke();
     }
 
+    function previewRectangle(dimensions, brushProperties) {
+        var
+            x = dimensions.x,
+            y = dimensions.y,
+            w = dimensions.width,
+            h = dimensions.height,
+            size = brushProperties.size,
+            color = brushProperties.color,
+            fill = brushProperties.fill
+        ;
+        clearPreview();
+        previewContext.globalCompositeOperation = 'source-over';
+        previewContext.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
+            color.b + ')';
+        previewContext.fillStyle = 'rgba(' + fill.r + ',' + fill.g + ',' +
+            fill.b + ',' + brushProperties.opacity + ')';
+        previewContext.lineWidth = Math.round(brushProperties.size / 2.0) * 2;
+        previewContext.lineCap = 'round';
+        previewContext.lineJoin = 'round';
+        previewContext.strokeRect(x, y, w, h);
+        previewContext.fillRect(x + size / 2.0, y + size / 2.0, w - size,
+            h - size);
+    }
+
+    function drawRectangle(dimensions, brushProperties) {
+        var
+            x = dimensions.x,
+            y = dimensions.y,
+            w = dimensions.width,
+            h = dimensions.height,
+            size = brushProperties.size,
+            color = brushProperties.color,
+            fill = brushProperties.fill
+        ;
+        context.globalCompositeOperation = 'source-over';
+        context.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
+            color.b + ')';
+        context.fillStyle = 'rgba(' + fill.r + ',' + fill.g + ',' +
+            fill.b + ',' + brushProperties.opacity + ')';
+        context.lineWidth = Math.round(brushProperties.size / 2.0) * 2;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.strokeRect(x, y, w, h);
+        context.fillRect(x + size / 2.0, y + size / 2.0, w - size, h - size);
+    }
+
     function clear() {
         context.clearRect(0, 0, container.width(), container.height())
+    }
+
+    function clearPreview() {
+        previewContext.clearRect(0, 0, container.width(), container.height());
     }
 
     function initUi() {
@@ -497,18 +560,19 @@ function initCanvasController() {
         canvasElem.appendTo(container);
         context = canvasElem[0].getContext('2d');
 
-        var tempCanvasElem = $('<canvas width="' + container.width() +
+        var previewCanvasElem = $('<canvas width="' + container.width() +
             '" height="' + container.height() + '"></canvas>');
-        tempCanvasElem.appendTo(container);
-        tempContext = tempCanvasElem[0].getContext('2d');
+        previewCanvasElem.appendTo(container);
+        previewContext = previewCanvasElem[0].getContext('2d');
 
         container.live('drag dragstart dragend', function(event) {
             var
                 x = event.layerX,
                 y = event.layerY,
-                type = event.handleObj.type
+                type = event.handleObj.type,
+                brushProperties = brush.get()
             ;
-            switch (brush.get('type')) {
+            switch (brushProperties.type) {
                 case 'pen':
                 case 'eraser':
                     switch (type) {
@@ -521,7 +585,8 @@ function initCanvasController() {
                                 points:[
                                     startPoint,
                                     {x:x, y:y}
-                                ]
+                                ],
+                                brushProperties:brushProperties
                             });
                             startPoint = {x:x, y:y};
                             break;
@@ -536,26 +601,29 @@ function initCanvasController() {
                             startPoint = {x:x, y:y};
                             break;
                         case 'drag':
-                            var
-                                mx = Math.min(x, startPoint.x),
-                                my = Math.min(y, startPoint.y),
-                                w = Math.abs(x - startPoint.x),
-                                h = Math.abs(y - startPoint.y)
-                            ;
-                            tempContext.clearRect(0, 0, container.width(),
-                                container.height());
-                            if (w && h) {
-                                var size = brush.get('size');
-                                tempContext.strokeRect(mx, my, w, h);
-                                tempContext.fillRect(mx + size / 2.0,
-                                    my + size / 2.0, w - size, h - size);
-                            }
+                            previewRectangle(
+                                {
+                                    x:Math.min(x, startPoint.x),
+                                    y:Math.min(y, startPoint.y),
+                                    width:Math.abs(x - startPoint.x),
+                                    height:Math.abs(y - startPoint.y)
+                                },
+                                brush.get()
+                            );
                             break;
                         case 'dragend':
+                            canvas.addCommand({
+                                name:'drawRectangle',
+                                dimensions:{
+                                    x:Math.min(x, startPoint.x),
+                                    y:Math.min(y, startPoint.y),
+                                    width:Math.abs(x - startPoint.x),
+                                    height:Math.abs(y - startPoint.y)
+                                },
+                                brushProperties:brushProperties
+                            });
+                            clearPreview();
                             startPoint = null;
-                            context.drawImage(tempCanvasElem[0], 0, 0);
-                            tempContext.clearRect(0, 0, container.width(),
-                                container.height());
                             break;
                     }
             }
@@ -570,48 +638,7 @@ function initCanvasController() {
     }
 
     function updateUi() {
-        updateBrush();
     }
-
-    function updateBrush() {
-        var color, fill;
-        if (context) {
-            var brushProperties = brush.get();
-            if (brushProperties.type == 'eraser') {
-                context.globalCompositeOperation = 'copy';
-                context.strokeStyle = 'rgba(0,0,0,0)';
-                context.lineWidth = brushProperties.size;
-                context.lineWidth = brushProperties.size;
-                context.lineCap = 'round';
-                context.lineJoin = 'round';
-            } else if (brushProperties.type == 'pen') {
-                color = brushProperties.color;
-                context.globalCompositeOperation = 'source-over';
-                context.strokeStyle = 'rgb(' + color.r + ',' + color.g + ',' +
-                    color.b + ')';
-                context.lineWidth = brushProperties.size;
-                context.lineCap = 'round';
-                context.lineJoin = 'round';
-            } else if (brushProperties.type == 'rectangle') {
-                color = brushProperties.color;
-                fill = brushProperties.fill;
-                tempContext.globalCompositeOperation = 'source-over';
-                tempContext.strokeStyle = 'rgb(' + color.r + ',' +
-                    color.g + ',' + color.b + ')';
-                tempContext.fillStyle = 'rgba(' + fill.r + ',' + fill.g +
-                    ',' + fill.b + ',' + brushProperties.opacity + ')';
-                tempContext.lineWidth = Math.round(brushProperties.size / 2.0) * 2;
-                tempContext.lineCap = 'round';
-                tempContext.lineJoin = 'round';
-            }
-        }
-    }
-
-    brush.onchange('color', updateBrush);
-    brush.onchange('fill', updateBrush);
-    brush.onchange('size', updateBrush);
-    brush.onchange('opacity', updateBrush);
-    brush.onchange('type', updateBrush);
 
     canvas.onadd(function () {
         var commands = canvas.getCommands();
@@ -623,7 +650,6 @@ function initCanvasController() {
 
     return {
         initUi:initUi,
-        updateUi:updateUi,
-        updateBrush:updateBrush
+        updateUi:updateUi
     };
 }
